@@ -15,11 +15,23 @@
 #           non-root user, no privileged mode, no network_mode: host, no
 #           cap_add, explicit TZ, a healthcheck on the only service, and
 #           x-app-meta as the last block.
-# Wrapper : the image runs Apache on port 80 (and a second port), which a non-root
-#           container cannot bind reliably. This wrapper serves the same PHP application with
-#           the built-in PHP web server on port 8080 and keeps the wiki data on the volume.
-# Escaping: docker compose interpolates ${VAR}/$VAR in compose files, so any
-#           '$' meant for the shell is written '$$'.
+#
+# Why there is no entrypoint wrapper any more (since 2026.7.14-2):
+#   The image is designed to run unprivileged. Its own entrypoint
+#   (/dokuwiki-entrypoint.sh) prepares the /storage volume (copies the core
+#   data, symlinks the bundled plugins and templates) and then starts Apache,
+#   which listens on the unprivileged port 8080 - no root needed. The previous
+#   package replaced that entrypoint with `php -S`, which
+#     (a) never ran the storage setup, so conf/ (accounts, ACL, settings) stayed
+#         container-local and was lost on every container recreate, and
+#     (b) served the whole document root as static files, so /data/pages/*.txt
+#         and /data/media/* were downloadable **without** login, bypassing the
+#         wiki ACL.
+#   Using the upstream entrypoint fixes both. The volume is split into the
+#   three directories the image itself anchors in /storage - data, conf, lib -
+#   so pages, attachments, revisions, accounts, ACL rules and installed
+#   extensions all persist, and the host layout stays the one users already
+#   know (data/, conf/, lib/ below DockerAppData/dokuwikidocker/).
 #
 # NOTE for maintainers: never place a comment line directly in front of a
 # "- value" sequence item (ports, volumes, ...). The official
@@ -33,22 +45,23 @@ services:
     container_name: dokuwikidocker
     restart: unless-stopped
     user: "1000:1000"
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - |
-        @@ENTRYPOINT_SH@@
     ports:
       - "8179:8080"
     environment:
       TZ: "Asia/Shanghai"
+      PHP_TIMEZONE: "Asia/Shanghai"
+      PHP_UPLOADLIMIT: "128M"
+      PHP_MEMORYLIMIT: "256M"
     volumes:
-      - /Volume1/DockerAppData/dokuwikidocker/data:/var/www/html/data
+      - /Volume1/DockerAppData/dokuwikidocker/data:/storage/data
+      - /Volume1/DockerAppData/dokuwikidocker/conf:/storage/conf
+      - /Volume1/DockerAppData/dokuwikidocker/lib:/storage/lib
     healthcheck:
-      test: ["CMD-SHELL", "grep -q ':1F90' /proc/net/tcp6 || grep -q ':1F90' /proc/net/tcp"]
+      test: ["CMD-SHELL", "curl --silent --fail-with-body http://127.0.0.1:8080/health.php || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 45s
+      start_period: 30s
 
 # TOS App Center web metadata (must be the last block of the file):
 # web.port is the published host port above, protocol is http.

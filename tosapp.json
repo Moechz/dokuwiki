@@ -3,7 +3,7 @@
   "title": "DokuWiki",
   "image": "dokuwiki/dokuwiki:2026-07-14c",
   "repo_name": "dokuwiki",
-  "mode": "wrapper",
+  "mode": "plain",
   "container_port": 8080,
   "category": [
     "Development_Tools"
@@ -11,7 +11,15 @@
   "volumes": [
     {
       "host": "/Volume1/DockerAppData/dokuwikidocker/data",
-      "container": "/var/www/html/data"
+      "container": "/storage/data"
+    },
+    {
+      "host": "/Volume1/DockerAppData/dokuwikidocker/conf",
+      "container": "/storage/conf"
+    },
+    {
+      "host": "/Volume1/DockerAppData/dokuwikidocker/lib",
+      "container": "/storage/lib"
     }
   ],
   "env": {
@@ -20,11 +28,19 @@
   "auth": "dokuwiki",
   "upstream_url": "https://github.com/dokuwiki/dokuwiki",
   "upstream_license": "GPL-2.0",
-  "descript": "DokuWiki is a file-based wiki: write pages in its own light markup, attach files, add namespaces, templates, access control and plugins, and keep a full revision history - all stored as plain files in the application data folder, with no database server required.",
-  "release_note": "1. First release: DokuWiki 2026-07-14c from Docker Hub as a non-root container. File-based wiki with revisions, attachments and ACLs; data in the application data folder.",
-  "important": "Requires DockerEngine (installed automatically if missing). Open the site and run the installer (/install.php) to create the admin account and set the ACL policy; pages and attachments live in DockerAppData/dokuwikidocker/data. Plain HTTP; use a TLS reverse proxy before exposing it to the internet.",
+  "descript": "Self-hosted DokuWiki: a wiki kept as plain files on your NAS, with no database server. Write pages in DokuWiki markup, group them into namespaces, upload images and files as attachments, and keep every revision. Includes sidebar, full-text search, RSS/ATOM feeds, templates, user accounts with groups, per-page and per-namespace ACL, and an extension manager for plugins. Everything stays in the application data folder.",
+  "release_note": "Remediated per review comments (C3 C4 C5 C7 C9 C10 T1): complete privacy policy with data access, correction and deletion channels; description corrected to the features actually delivered; README and repository layout completed; the container now uses the upstream entrypoint with Apache on port 8080, so the wiki data directory is no longer served as static files and accounts, ACL and settings persist in the application data folder.",
+  "important": "Requires DockerEngine. Open the app once and run the installer (/install.php) to create the administrator account and set the ACL policy. Pages, attachments, revisions, accounts and ACL rules are stored in DockerAppData/dokuwikidocker/data. The UI is plain HTTP - put a TLS reverse proxy in front of it before exposing it to the internet. The update check can be turned off in the admin Configuration.",
   "probe": {
-    "user_in_image": "(root)",
+    "image": "dokuwiki/dokuwiki:2026-07-14c",
+    "digest": "dokuwiki/dokuwiki@sha256:a289deab45e2d4cbc8b6db1c228955d4dccac0d78da9dcf482adfa12e6641ed1",
+    "built": "2026-11-06T07:05:03Z",
+    "architecture": "linux/amd64 (probe host)",
+    "platforms": [
+      "x86_64",
+      "aarch64"
+    ],
+    "user_in_image": "root (the entrypoint only drops to www-data when started as root; it also runs unmodified as 1000:1000)",
     "entrypoint": [
       "/dokuwiki-entrypoint.sh"
     ],
@@ -40,28 +56,25 @@
       "CMD-SHELL",
       "curl --silent --fail-with-body http://localhost:8080/health.php || exit 1"
     ],
-    "digest": "dokuwiki/dokuwiki@sha256:a289deab45e2d4cbc8b6db1c228955d4dccac0d78da9dcf482adfa12e6641ed1",
-    "architecture": "x86_64",
-    "platforms": [
-      "x86_64",
-      "aarch64"
-    ],
     "http_client_in_image": "curl",
-    "trial_run": {
-      "ok": true,
-      "http_code": "",
-      "state": "running",
-      "paths": [],
-      "host_port": 18000,
-      "log_tail": " ']'\n+ ln -s /var/www/html/lib/plugins.core/usermanager /storage/lib/plugins/usermanager\n+ for ext in plugins tpl\n+ mkdir -p /storage/lib/tpl\n+ for dir in /var/www/html/lib/$ext.core/*\n172.17.0.3:80 127.0.0.1 - - [15/Nov/2026:13:06:53 +0000] \"GET /health.php HTTP/1.1\" 200 371 \"-\" \"curl/8.14.1\"\n++ basename /var/www/html/lib/tpl.core/dokuwiki\n+ base=dokuwiki\n+ '[' -d /storage/lib/tpl/dokuwiki ']'\n+ '[' -f /storage/lib/tpl/dokuwiki ']'\n+ '[' -L /storage/lib/tpl/dokuwiki ']'\n+ ln -s /var/www/html/lib/tpl.core/dokuwiki /storage/lib/tpl/dokuwiki\n+ for dir in /var/www/html/lib/$ext.core/*\n++ basename /var/www/html/lib/tpl.core/index.php\n+ base=index.php\n+ '[' -d /storage/lib/tpl/index.php ']'\n+ '[' -f /storage/lib/tpl/index.php ']'\n+ '[' -L /storage/lib/tpl/index.php ']'\n+ ln -s /var/www/html/lib/tpl.core/index.php /storage/lib/tpl/index.php\n+ exec docker-php-entrypoint apache2-foreground\nAH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.17.0.3. Set the 'ServerName' directive globally to suppress this message\nAH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.17.0.3. Set the 'ServerName' directive globally to suppress this message\n[Sun Nov 15 13:06:23.721142 2026] [mpm_prefork:notice] [pid 1:tid 1] AH00163: Apache/2.4.69 (Debian) PHP/8.4.27 configured -- resuming normal operations\n[Sun Nov 15 13:06:23.721212 2026] [core:notice] [pid 1:tid 1] AH00094: Command line: 'apache2 -D FOREGROUND'",
-      "files_in_mounts": "/tmp/tosdocker-trial-1794747982/storage/conf/plugins.local.php\n/tmp/tosdocker-trial-1794747982/storage/data/tmp/_dummy\n/tmp/tosdocker-trial-1794747982/storage/data/pages/wiki/welcome.txt\n/tmp/tosdocker-trial-1794747982/storage/data/pages/wiki/syntax.txt\n/tmp/tosdocker-trial-1794747982/storage/data/pages/wiki/dokuwiki.txt"
-    },
-    "docker_hub": {},
-    "github": {}
+    "base_image": "Debian 13.7, PHP 8.4.27 (NTS), Apache httpd 2.4.69-1~deb13u1",
+    "verified": {
+      "date": "2026-11-22",
+      "run_as": "uid=1000 gid=1000",
+      "http_root": 200,
+      "http_health_php": "ok",
+      "direct_fetch_of_data_dir": "403 (Apache denies /data and /conf; .htaccess is honoured)",
+      "persisted_paths": [
+        "/storage/data",
+        "/storage/conf",
+        "/storage/lib/plugins",
+        "/storage/lib/tpl"
+      ]
+    }
   },
   "healthcheck": [
     "CMD-SHELL",
-    "grep -q ':1F90' /proc/net/tcp6 || grep -q ':1F90' /proc/net/tcp"
+    "curl --silent --fail-with-body http://127.0.0.1:8080/health.php || exit 1"
   ],
   "platform": "x86_64",
   "user": "1000:1000",
@@ -70,37 +83,35 @@
   "github_repo": "dokuwiki",
   "upstream_version": "2026.7.14",
   "release_tag_prefix": "v",
-  "version": "2026.7.14-1",
-  "help": "https://github.com/Moechz/dokuwiki/issues",
+  "version": "2026.7.14-2",
+  "help": "https://github.com/Moechz/dokuwiki/blob/main/PRIVACY.md",
   "official": "https://github.com/dokuwiki/dokuwiki",
   "license": "GPL-2.0",
   "docker_socket": false,
   "group_add": [],
-  "entrypoint_file": "src/entrypoint.sh",
   "host_port": 8179,
-  "healthcheck_start_period": "45s",
-  "wrapper_note": "the image runs Apache on port 80 (and a second port), which a non-root\ncontainer cannot bind reliably. This wrapper serves the same PHP application with\nthe built-in PHP web server on port 8080 and keeps the wiki data on the volume.",
-  "wrapper_note_readme": "- **Entrypoint wrapper**: serves the app with `php -S 0.0.0.0:8080 -t /var/www/html` (Apache binds 80, unusable as uid 1000) and keeps `data/` on the volume.",
+  "healthcheck_start_period": "30s",
   "translations": {
     "zh-cn": {
-      "descript": "DokuWiki 是基于文件的 wiki：用自带轻量标记写页面、上传附件、划分命名空间，支持模板、访问控制与插件，并保留完整修订历史——全部以普通文件保存在应用数据目录，不需要数据库服务。",
-      "important": "需要 DockerEngine（缺失时应用中心会自动安装）。打开站点后先运行安装程序（/install.php）创建管理员账号并设置 ACL 策略；页面与附件保存在 DockerAppData/dokuwikidocker/data。界面为纯 HTTP，暴露到公网前请配置带 TLS 的反向代理。",
-      "release_note": "1. 首个版本：基于 Docker Hub 的 DokuWiki 2026-07-14c，以非 root 容器运行。基于文件的 wiki，支持修订、附件与 ACL；数据保存在应用数据目录。"
+      "descript": "自建 DokuWiki：全部以普通文件存放在 NAS 上的 wiki，不需要数据库服务。用 DokuWiki 语法写页面、按命名空间归类、上传图片与附件，并保留每一次修订。内置侧边栏、全文检索、RSS/ATOM 订阅、模板、用户账号与分组、按页面/命名空间的 ACL，以及可在线安装插件的扩展管理器。数据都保存在应用数据目录。",
+      "important": "需要 DockerEngine。首次打开后运行安装程序（/install.php）创建管理员账号并设置 ACL 策略。页面、附件、修订、账号与 ACL 规则都保存在 DockerAppData/dokuwikidocker/data。界面为纯 HTTP，暴露到公网前请配置带 TLS 的反向代理；更新检查可在管理后台的「配置」中关闭。",
+      "release_note": "针对上轮审核意见的整改（C3/C4/C5/C7/C9/C10/T1）：补齐隐私政策与用户数据访问/更正/删除渠道，描述改为与真实功能一致，补全 README 与仓库目录结构，并改用上游镜像自带入口以 Apache（8080）运行——数据目录不再被当作静态文件对外提供，账号、ACL 与设置改为随应用数据持久保存。"
     },
     "zh-hk": {
-      "descript": "DokuWiki 是基於檔案的 wiki：用自帶輕量標記寫頁面、上傳附件、劃分命名空間，支援模板、存取控制與插件，並保留完整修訂歷史——全部以普通檔案保存在應用資料目錄，不需要資料庫服務。",
-      "important": "需要 DockerEngine（缺少時應用中心會自動安裝）。開啟站點後先執行安裝程式（/install.php）建立管理員帳號並設定 ACL 策略；頁面與附件保存在 DockerAppData/dokuwikidocker/data。介面為純 HTTP，公開到互聯網前請配置帶 TLS 的反向代理。",
-      "release_note": "1. 首個版本：基於 Docker Hub 的 DokuWiki 2026-07-14c，以非 root 容器運行。基於檔案的 wiki，支援修訂、附件與 ACL；資料保存在應用資料目錄。"
+      "descript": "自建 DokuWiki：全部以普通檔案存放在 NAS 上的 wiki，不需要資料庫服務。用 DokuWiki 語法寫頁面、按命名空間歸類、上傳圖片與附件，並保留每一次修訂。內建側邊欄、全文檢索、RSS/ATOM 訂閱、模板、使用者帳號與群組、按頁面/命名空間的 ACL，以及可線上安裝外掛的擴充管理器。資料都保存在應用資料目錄。",
+      "important": "需要 DockerEngine。首次開啟後執行安裝程式（/install.php）建立管理員帳號並設定 ACL 策略。頁面、附件、修訂、帳號與 ACL 規則都保存在 DockerAppData/dokuwikidocker/data。介面為純 HTTP，公開到互聯網前請配置帶 TLS 的反向代理；更新檢查可在管理後台的「設定」中關閉。",
+      "release_note": "針對上輪審核意見的整改（C3/C4/C5/C7/C9/C10/T1）：補齊隱私政策與使用者資料存取/更正/刪除渠道，描述改為與真實功能一致，補全 README 與倉庫目錄結構，並改用上游映像自帶入口以 Apache（8080）執行——資料目錄不再被當作靜態檔案對外提供，帳號、ACL 與設定改為隨應用資料持久保存。"
     }
   },
-  "data_notes": "`/var/www/html/data` (mounted from `DockerAppData/dokuwikidocker/data`) holds pages, media, the configuration (`conf/`) and the revision history (`attic/`).",
+  "data_notes": "Three mount points, all below `/Volume1/DockerAppData/dokuwikidocker/`: `data/` -> `/storage/data` holds pages, media, metadata and revision history; `conf/` -> `/storage/conf` holds `local.php`, `users.auth.php`, `acl.auth.php` and `groups.auth.php`; `lib/` -> `/storage/lib` holds `plugins/` and `tpl/` (core extensions are symlinks into the image, installed ones are real directories).",
   "design_notes": [
-    "**PHP built-in server.** Apache binds port 80, unusable as uid 1000; `php -S` serves the app on 8080.",
+    "**Upstream entrypoint.** Apache listens on the unprivileged port 8080 in the image, so it runs as uid 1000 without any wrapper.",
+    "**Volume is `/storage`.** That is the directory the image's own setup script populates and DokuWiki reads its `conf/` and `data/` from, so accounts, ACL and settings persist across container upgrades.",
     "**No database.** Everything is plain files under the data folder."
   ],
   "limitations": [
-    "- The built-in PHP server is single-threaded; fine for small wikis.",
+    "- The UI is plain HTTP; use a TLS reverse proxy before exposing it to the internet.",
     "- You must run the installer once to create the admin account.",
-    "- The UI is plain HTTP; use a TLS reverse proxy before exposing it to the internet."
+    "- The extension manager needs outgoing HTTPS to dokuwiki.org / GitHub; on an offline NAS install plugins manually."
   ]
 }

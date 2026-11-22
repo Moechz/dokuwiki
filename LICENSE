@@ -23,12 +23,16 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 Third-party notices
 
-DokuWiki is Copyright its upstream authors and is distributed under
-GPL-2.0. This repository only packages the
-official container image `dokuwiki/dokuwiki:2026-07-14c` from Docker Hub unmodified; no
-upstream source code is distributed here. All trademarks belong to their owners.
-This is an independent community package, not affiliated with the upstream
-project or TerraMaster.
+DokuWiki is Copyright (c) 2004-2026 Andreas Gohr and the DokuWiki contributors,
+and is distributed under GPL-2.0. This repository only packages the official
+container image `dokuwiki/dokuwiki:2026-07-14c` from Docker Hub unmodified
+(digest sha256:a289deab45e2d4cbc8b6db1c228955d4dccac0d78da9dcf482adfa12e6641ed1);
+no upstream source code is distributed or modified here. The image itself
+contains Debian 13.7, Apache httpd 2.4.69 (Apache-2.0), PHP 8.4.27 (PHP-3.01)
+and DokuWiki (GPL-2.0). All trademarks belong to their owners — see NOTICE.md
+for the full component and trademark list. This is an independent community
+package, not affiliated with the DokuWiki project or TerraMaster.
 
 TOSAppSelfTestingTool is an official TerraMaster utility, redistributed here
 unmodified for local package validation.
+
